@@ -17,7 +17,7 @@ import { checkDatabaseHealth } from "./lib/database";
 import { checkChatDatabaseHealth } from "./lib/chat-database";
 import { checkSubscriptionDatabaseHealth } from "./lib/subscription-database";
 import { checkProductionDatabaseHealth } from "./lib/production-database";
-import { checkPostgresDatabaseHealth } from "./lib/postgres-database";
+import { checkPostgresDatabaseHealth } from "./lib/payments-database";
 import registerModules from "./modules";
 
 export const buildApp = async () => {

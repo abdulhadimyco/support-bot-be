@@ -15,7 +15,7 @@ import {
 import {
 	connectPostgresDatabase,
 	disconnectPostgresDatabase,
-} from "./lib/postgres-database";
+} from "./lib/payments-database";
 import { buildApp } from "./app";
 
 const start = async () => {

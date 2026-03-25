@@ -18,6 +18,10 @@ export function toHexString(v: unknown): string | null {
 	return String(v);
 }
 
+export function formatShort(d: Date): string {
+	return dayjs(d).format("YYYY-MM-DD HH:mm");
+}
+
 export function normalizePhoneVariants(raw: string): string[] {
 	const input = String(raw || "").trim();
 	if (!input) return [];

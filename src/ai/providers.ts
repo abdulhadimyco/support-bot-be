@@ -6,7 +6,6 @@ const minimax = createOpenAICompatible({
 	name: "minimax",
 	baseURL: "https://api.minimax.io/v1",
 	apiKey: config.MINIMAX_API_KEY,
-	includeUsage: true,
 });
 
 const anthropic = createAnthropic({

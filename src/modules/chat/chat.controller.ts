@@ -76,10 +76,9 @@ export async function handleChat(
 	const result = streamText({
 		model,
 		messages: toModelMessages(messages),
-		onFinish: async ({ text, usage, totalUsage }) => {
+		onFinish: async ({ text }) => {
 			try {
 				const elapsedMs = Date.now() - startTime;
-				const tokens = totalUsage ?? usage;
 
 				await Message.create({
 					threadId: thread._id,
@@ -88,8 +87,6 @@ export async function handleChat(
 					metadata: {
 						model: config.MINIMAX_MODEL,
 						provider: "minimax",
-						inputTokens: tokens?.inputTokens ?? null,
-						outputTokens: tokens?.outputTokens ?? null,
 						elapsedMs,
 					},
 				});

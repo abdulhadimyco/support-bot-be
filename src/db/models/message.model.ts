@@ -4,8 +4,6 @@ import { getChatConnection } from "../../lib/chat-database";
 export interface IMessageMetadata {
 	model?: string;
 	provider?: string;
-	inputTokens?: number;
-	outputTokens?: number;
 	elapsedMs?: number;
 }
 

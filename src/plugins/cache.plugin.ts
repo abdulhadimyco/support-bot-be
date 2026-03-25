@@ -11,10 +11,22 @@ declare module "fastify" {
 
 export default fp(
 	async (fastify: FastifyInstance) => {
-		if (!config.CACHE_ENABLED) return;
+		if (!config.CACHE_ENABLED || !config.REDIS_URL) {
+			fastify.log.info("Cache disabled — skipping Redis connection");
+			return;
+		}
 
 		const cache = new RedisCache(config.REDIS_URL, fastify.log);
-		await cache.connect();
+		try {
+			await cache.connect();
+		} catch (err) {
+			fastify.log.warn(
+				{ err },
+				"Redis connection failed — continuing without cache",
+			);
+			return;
+		}
+
 		fastify.decorate("cache", cache);
 
 		fastify.addHook("onClose", async () => {

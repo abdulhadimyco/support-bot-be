@@ -16,8 +16,8 @@ const configSchema = z.object({
 	PORT: z.string().regex(/^\d+$/).transform(Number).default("3000"),
 
 	// Database
-	MONGO_DATABASE_URL: z.string().url(),
-	REDIS_URL: z.string().url(),
+	MONGO_DATABASE_URL: z.string(),
+	REDIS_URL: z.string().optional(),
 
 	// Auth (JWT validation only — no signing)
 	JWT_SECRET: z.string().min(1),

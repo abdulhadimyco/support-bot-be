@@ -22,10 +22,5 @@ threadSchema.index({ userId: 1 });
 threadSchema.index({ createdAt: -1 });
 threadSchema.index({ status: 1, updatedAt: -1 });
 
-let _model: Model<IThread> | null = null;
-
-export const getThreadModel = (): Model<IThread> => {
-	if (!_model)
-		_model = getChatConnection().model<IThread>("Thread", threadSchema);
-	return _model;
-};
+export const getThreadModel = (): Model<IThread> =>
+	getChatConnection().model<IThread>("Thread", threadSchema);

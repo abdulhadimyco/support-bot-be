@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const objectIdSchema = z
+	.string()
+	.regex(/^[a-f0-9]{24}$/, "Invalid ObjectId");
+
 export const listThreadsQuerySchema = z.object({
 	page: z.string().regex(/^\d+$/).transform(Number).default("1"),
 	limit: z.string().regex(/^\d+$/).transform(Number).default("20"),
@@ -11,5 +15,5 @@ export const createThreadBodySchema = z.object({
 });
 
 export const threadParamsSchema = z.object({
-	id: z.string().min(1),
+	id: objectIdSchema,
 });

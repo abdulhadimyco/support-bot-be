@@ -4,7 +4,7 @@ import config from "../config/env";
 
 const minimax = createOpenAICompatible({
 	name: "minimax",
-	baseURL: "https://api.minimaxi.com/v1",
+	baseURL: "https://api.minimax.io/v1",
 	apiKey: config.MINIMAX_API_KEY,
 });
 

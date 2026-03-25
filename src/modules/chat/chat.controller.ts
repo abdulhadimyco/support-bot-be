@@ -7,11 +7,31 @@ import {
 	ForbiddenError,
 	NotFoundError,
 } from "../../lib/errors";
+import { assertThreadOwnership } from "../../utils/thread.utils";
 import config from "../../config/env";
 import type { z } from "zod";
 import type { chatBodySchema } from "./chat.schema";
 
 type ChatBody = z.infer<typeof chatBodySchema>;
+
+function extractText(msg: ChatBody["messages"][number]): string {
+	if (msg.parts?.length) {
+		return msg.parts
+			.filter((p) => p.type === "text" && p.text)
+			.map((p) => p.text!)
+			.join("");
+	}
+	return msg.content ?? "";
+}
+
+function toModelMessages(messages: ChatBody["messages"]) {
+	return messages
+		.filter((m) => m.role === "user" || m.role === "assistant")
+		.map((m) => ({
+			role: m.role as "user" | "assistant",
+			content: extractText(m),
+		}));
+}
 
 export async function handleChat(
 	request: FastifyRequest<{ Body: ChatBody }>,
@@ -22,42 +42,43 @@ export async function handleChat(
 	const Thread = getThreadModel();
 	const Message = getMessageModel();
 
-	// 1. Resolve or create thread
 	let thread;
 	if (threadId) {
 		thread = await Thread.findById(threadId);
 		if (!thread) throw new NotFoundError("Thread not found");
-		if (String(thread.userId) !== String(appUser._id)) {
-			throw new ForbiddenError("Thread does not belong to you");
-		}
+		assertThreadOwnership(thread, appUser);
 		if (thread.status === "closed") {
 			throw new BadRequestError("Thread is closed");
 		}
 	} else {
 		const firstUserMsg = messages.find((m) => m.role === "user");
-		thread = await Thread.create({
-			userId: appUser._id,
-			title: firstUserMsg?.content.slice(0, 100) || null,
-		});
+		const title = firstUserMsg
+			? extractText(firstUserMsg).slice(0, 100)
+			: null;
+		thread = await Thread.create({ userId: appUser._id, title });
 	}
 
-	// 2. Save the latest user message to DB
+	// Save the latest user message to the database
 	const lastMessage = messages[messages.length - 1];
-	if (lastMessage?.role === "user") {
+	const lastUserText =
+		lastMessage?.role === "user" ? extractText(lastMessage) : null;
+
+	if (lastUserText) {
 		await Message.create({
 			threadId: thread._id,
 			role: "user",
-			content: lastMessage.content,
+			content: lastUserText,
 		});
 	}
 
-	// 3. Stream AI response
+	// Stream AI response and handle assistant message persistence
 	const startTime = Date.now();
 	const model = getModel("primary");
+	const threadIdStr = String(thread._id);
 
 	const result = streamText({
 		model,
-		messages: messages.map((m) => ({ role: m.role, content: m.content })),
+		messages: toModelMessages(messages),
 		onFinish: async ({ text, usage }) => {
 			try {
 				const elapsedMs = Date.now() - startTime;
@@ -75,23 +96,30 @@ export async function handleChat(
 					},
 				});
 
-				// Set thread title from first user message if not set
-				if (!thread.title && lastMessage?.content) {
-					thread.title = lastMessage.content.slice(0, 100);
-					await thread.save();
+				if (lastUserText) {
+					await Thread.findOneAndUpdate(
+						{ _id: thread._id, title: null },
+						{ title: lastUserText.slice(0, 100) },
+					);
 				}
 			} catch (err) {
-				request.log.error({ err }, "Failed to save assistant message");
+				request.log.error({ err }, "Failed to persist assistant message");
 			}
 		},
 	});
 
-	// 4. Hijack Fastify's response lifecycle and pipe SSE stream
-	reply.hijack();
-	result.pipeTextStreamToResponse(reply.raw, {
-		headers: {
-			"X-Thread-Id": String(thread._id),
-			"Content-Type": "text/plain; charset=utf-8",
-		},
-	});
+	try {
+		reply.hijack();
+		result.pipeUIMessageStreamToResponse(reply.raw, {
+			headers: {
+				"X-Thread-Id": threadIdStr,
+			},
+		});
+	} catch (err) {
+		request.log.error({ err }, "Stream setup failed");
+		if (!reply.raw.headersSent) {
+			reply.raw.writeHead(500, { "Content-Type": "application/json" });
+			reply.raw.end(JSON.stringify({ error: "Stream failed" }));
+		}
+	}
 }

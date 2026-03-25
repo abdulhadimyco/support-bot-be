@@ -1,6 +1,13 @@
+import type { Types } from "mongoose";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { getThreadModel, getMessageModel } from "../../db/models";
-import { ForbiddenError, NotFoundError } from "../../lib/errors";
+import {
+	getThreadModel,
+	getMessageModel,
+	type IThread,
+	type IMessage,
+} from "../../db/models";
+import { NotFoundError } from "../../lib/errors";
+import { assertThreadOwnership } from "../../utils/thread.utils";
 import {
 	successResponse,
 	paginatedResponse,
@@ -17,8 +24,7 @@ type ListQuery = z.infer<typeof listThreadsQuerySchema>;
 type CreateBody = z.infer<typeof createThreadBodySchema>;
 type ThreadParams = z.infer<typeof threadParamsSchema>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function serializeThread(doc: any) {
+function serializeThread(doc: IThread & { _id: Types.ObjectId }) {
 	return {
 		id: String(doc._id),
 		userId: String(doc.userId),
@@ -26,26 +32,19 @@ function serializeThread(doc: any) {
 		customerName: null,
 		summary: doc.title ?? null,
 		status: doc.status,
-		createdAt: doc.createdAt
-			? (doc.createdAt as Date).toISOString()
-			: undefined,
-		updatedAt: doc.updatedAt
-			? (doc.updatedAt as Date).toISOString()
-			: undefined,
+		createdAt: doc.createdAt.toISOString(),
+		updatedAt: doc.updatedAt.toISOString(),
 	};
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function serializeMessage(doc: any) {
+function serializeMessage(doc: IMessage & { _id: Types.ObjectId }) {
 	return {
 		id: String(doc._id),
 		threadId: String(doc.threadId),
 		role: doc.role,
 		content: doc.content,
 		metadata: doc.metadata ?? null,
-		createdAt: doc.createdAt
-			? (doc.createdAt as Date).toISOString()
-			: undefined,
+		createdAt: doc.createdAt.toISOString(),
 	};
 }
 
@@ -88,7 +87,11 @@ export async function createThread(
 	});
 
 	reply.status(201);
-	return successResponse(serializeThread(thread.toObject()), "Thread created", 201);
+	return successResponse(
+		serializeThread(thread.toObject()),
+		"Thread created",
+		201,
+	);
 }
 
 export async function getThread(
@@ -101,9 +104,7 @@ export async function getThread(
 
 	const thread = await Thread.findById(id).lean();
 	if (!thread) throw new NotFoundError("Thread not found");
-	if (String(thread.userId) !== String(request.appUser!._id)) {
-		throw new ForbiddenError("Not your thread");
-	}
+	assertThreadOwnership(thread, request.appUser!);
 
 	const messages = await Message.find({ threadId: thread._id })
 		.sort({ createdAt: 1 })
@@ -115,7 +116,7 @@ export async function getThread(
 	});
 }
 
-export async function deleteThread(
+export async function closeThread(
 	request: FastifyRequest<{ Params: ThreadParams }>,
 	_reply: FastifyReply,
 ) {
@@ -124,9 +125,7 @@ export async function deleteThread(
 
 	const thread = await Thread.findById(id);
 	if (!thread) throw new NotFoundError("Thread not found");
-	if (String(thread.userId) !== String(request.appUser!._id)) {
-		throw new ForbiddenError("Not your thread");
-	}
+	assertThreadOwnership(thread, request.appUser!);
 
 	thread.status = "closed";
 	await thread.save();

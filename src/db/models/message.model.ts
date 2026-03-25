@@ -12,7 +12,7 @@ export interface IMessageMetadata {
 export interface IMessage {
 	threadId: Types.ObjectId;
 	role: "user" | "assistant";
-	content: unknown;
+	content: string;
 	metadata: IMessageMetadata | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -26,7 +26,7 @@ const messageSchema = new Schema<IMessage>(
 			required: true,
 		},
 		role: { type: String, enum: ["user", "assistant"], required: true },
-		content: { type: Schema.Types.Mixed, required: true },
+		content: { type: String, required: true },
 		metadata: { type: Schema.Types.Mixed, default: null },
 	},
 	{ timestamps: true },
@@ -34,10 +34,5 @@ const messageSchema = new Schema<IMessage>(
 
 messageSchema.index({ threadId: 1, createdAt: 1 });
 
-let _model: Model<IMessage> | null = null;
-
-export const getMessageModel = (): Model<IMessage> => {
-	if (!_model)
-		_model = getChatConnection().model<IMessage>("Message", messageSchema);
-	return _model;
-};
+export const getMessageModel = (): Model<IMessage> =>
+	getChatConnection().model<IMessage>("Message", messageSchema);

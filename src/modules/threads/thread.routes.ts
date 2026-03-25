@@ -5,7 +5,7 @@ import {
 	listThreads,
 	createThread,
 	getThread,
-	deleteThread,
+	closeThread,
 } from "./thread.controller";
 import {
 	listThreadsQuerySchema,
@@ -38,6 +38,6 @@ export default async function threadRoutes(app: FastifyInstance) {
 	app.delete(
 		"/:id",
 		{ schema: { params: threadParamsSchema } },
-		deleteThread,
+		closeThread,
 	);
 }

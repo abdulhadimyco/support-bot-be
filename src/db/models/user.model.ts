@@ -26,9 +26,5 @@ const userSchema = new Schema<IUser>(
 	{ timestamps: true },
 );
 
-let _model: Model<IUser> | null = null;
-
-export const getUserModel = (): Model<IUser> => {
-	if (!_model) _model = getChatConnection().model<IUser>("User", userSchema);
-	return _model;
-};
+export const getUserModel = (): Model<IUser> =>
+	getChatConnection().model<IUser>("User", userSchema);

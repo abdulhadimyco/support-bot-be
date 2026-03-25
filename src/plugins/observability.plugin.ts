@@ -1,5 +1,5 @@
 import fp from "fastify-plugin";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import {
 	Registry,
 	Counter,
@@ -8,6 +8,12 @@ import {
 	collectDefaultMetrics,
 } from "prom-client";
 import config from "../config/env";
+
+declare module "fastify" {
+	interface FastifyRequest {
+		__startTime: bigint;
+	}
+}
 
 const register = new Registry();
 
@@ -35,34 +41,48 @@ const httpRequestsInProgress = new Gauge({
 	registers: [register],
 });
 
+function recordMetrics(request: FastifyRequest, statusCode: number) {
+	const durationMs =
+		Number(process.hrtime.bigint() - request.__startTime) / 1e6;
+	const labels = {
+		method: request.method,
+		route: request.routeOptions?.url || request.url,
+		status_code: statusCode.toString(),
+	};
+
+	httpRequestDuration.observe(labels, durationMs / 1000);
+	httpRequestTotal.inc(labels);
+	httpRequestsInProgress.dec({ method: request.method });
+}
+
 export default fp(
 	async (fastify: FastifyInstance) => {
 		if (!config.METRICS_ENABLED) return;
 
+		fastify.decorateRequest("__startTime", BigInt(0));
+
 		fastify.addHook("onRequest", async (request) => {
-			(request as any).__startTime = process.hrtime.bigint();
+			request.__startTime = process.hrtime.bigint();
 			httpRequestsInProgress.inc({ method: request.method });
 		});
 
 		fastify.addHook("onResponse", async (request, reply) => {
-			const start = (request as any).__startTime as bigint;
-			const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+			recordMetrics(request, reply.statusCode);
+		});
 
-			const labels = {
-				method: request.method,
-				route: request.routeOptions?.url || request.url,
-				status_code: reply.statusCode.toString(),
-			};
-
-			httpRequestDuration.observe(labels, durationMs / 1000);
-			httpRequestTotal.inc(labels);
+		
+		fastify.addHook("onRequestAbort", async (request) => {
 			httpRequestsInProgress.dec({ method: request.method });
 		});
 
-		fastify.get("/metrics", { schema: { hide: true } }, async (_request, reply) => {
-			const metrics = await register.metrics();
-			reply.header("Content-Type", register.contentType).send(metrics);
-		});
+		fastify.get(
+			"/metrics",
+			{ schema: { hide: true } },
+			async (_request, reply) => {
+				const metrics = await register.metrics();
+				reply.header("Content-Type", register.contentType).send(metrics);
+			},
+		);
 	},
 	{ name: "observability-plugin" },
 );

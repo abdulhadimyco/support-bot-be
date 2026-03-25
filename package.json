@@ -1,0 +1,53 @@
+{
+  "name": "fastify-backend-template",
+  "version": "1.0.0",
+  "description": "Production-ready Fastify backend template with MongoDB, Redis, Kafka, JWT auth, Swagger, and observability",
+  "main": "dist/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "dotenv -e .env.development -- tsx --watch ./src/main.ts",
+    "build": "tsup --config build.ts",
+    "start:prod": "dotenv -e .env.production -- node ./dist/main.js",
+    "start:local": "dotenv -e .env.local -- node ./dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "seed": "dotenv -e .env.development -- tsx scripts/seed.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/compress": "^8.0.1",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/rate-limit": "^10.2.1",
+    "@fastify/swagger": "^9.4.2",
+    "@fastify/swagger-ui": "^5.2.2",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1",
+    "fastify-type-provider-zod": "^4.0.2",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "mongoose": "^8.19.2",
+    "nanoid": "^3.3.7",
+    "pino": "^9.1.0",
+    "pino-pretty": "^11.1.0",
+    "prom-client": "^15.1.3",
+    "validator": "^13.15.20",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^24.9.2",
+    "@types/validator": "^13.7.17",
+    "dotenv-cli": "^7.4.2",
+    "tsup": "^8.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.9.0"
+}

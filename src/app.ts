@@ -15,6 +15,9 @@ import observabilityPlugin from "./plugins/observability.plugin";
 import { errorHandler } from "./middlewares/error-handler";
 import { checkDatabaseHealth } from "./lib/database";
 import { checkChatDatabaseHealth } from "./lib/chat-database";
+import { checkSubscriptionDatabaseHealth } from "./lib/subscription-database";
+import { checkProductionDatabaseHealth } from "./lib/production-database";
+import { checkPostgresDatabaseHealth } from "./lib/postgres-database";
 import registerModules from "./modules";
 
 export const buildApp = async () => {
@@ -62,6 +65,9 @@ export const buildApp = async () => {
 	fastify.get("/health", { schema: { hide: true } }, async () => {
 		const dbHealthy = await checkDatabaseHealth();
 		const chatDbHealthy = await checkChatDatabaseHealth();
+		const subscriptionDbHealthy = await checkSubscriptionDatabaseHealth();
+		const productionDbHealthy = await checkProductionDatabaseHealth();
+		const pgDbHealthy = await checkPostgresDatabaseHealth();
 		return {
 			success: true,
 			statusCode: 200,
@@ -72,6 +78,9 @@ export const buildApp = async () => {
 				uptime: process.uptime(),
 				database: dbHealthy ? "connected" : "disconnected",
 				chatDatabase: chatDbHealthy ? "connected" : "disconnected",
+				subscriptionCluster: subscriptionDbHealthy ? "connected" : "disconnected",
+				productionCluster: productionDbHealthy ? "connected" : "disconnected",
+				paymentsDatabase: pgDbHealthy ? "connected" : "disconnected",
 			},
 		};
 	});

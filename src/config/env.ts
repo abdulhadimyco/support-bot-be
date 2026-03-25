@@ -23,6 +23,28 @@ const configSchema = z.object({
 	MONGO_CHAT_URI: z.string().min(1),
 	MONGO_CHAT_DB: z.string().default("myco_support"),
 
+	// Subscription Cluster (subscriptions, receipts, playback, sessions — read-only)
+	MONGO_SUBSCRIPTION_URI: z.string().optional(),
+	MONGO_SUBSCRIPTION_DB: z.string().default("myco_events"),
+
+	// Production Cluster (users, engagement/watch history — read-only)
+	MONGO_PRODUCTION_URI: z.string().optional(),
+	MONGO_PRODUCTION_DB: z.string().default("mycoLive"),
+	MONGO_ENGAGEMENT_DB: z.string().default("engagement"),
+
+	// Payments Database — PostgreSQL (transactions, checkouts — read-only)
+	POSTGRES_HOST: z.string().optional(),
+	POSTGRES_PORT: z.string().regex(/^\d+$/).transform(Number).default("5432"),
+	POSTGRES_USER: z.string().optional(),
+	POSTGRES_PASSWORD: z.string().optional(),
+	POSTGRES_DB: z.string().default("payments"),
+
+	// Jira Integration
+	JIRA_BASE_URL: z.string().optional(),
+	JIRA_EMAIL: z.string().optional(),
+	JIRA_API_TOKEN: z.string().optional(),
+	JIRA_BOARD_ID: z.string().default("178"),
+
 	// Auth (JWT validation only — no signing)
 	JWT_SECRET: z.string().min(1),
 

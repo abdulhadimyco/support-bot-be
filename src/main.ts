@@ -4,6 +4,18 @@ import {
 	connectChatDatabase,
 	disconnectChatDatabase,
 } from "./lib/chat-database";
+import {
+	connectSubscriptionDatabase,
+	disconnectSubscriptionDatabase,
+} from "./lib/subscription-database";
+import {
+	connectProductionDatabase,
+	disconnectProductionDatabase,
+} from "./lib/production-database";
+import {
+	connectPostgresDatabase,
+	disconnectPostgresDatabase,
+} from "./lib/postgres-database";
 import { buildApp } from "./app";
 
 const start = async () => {
@@ -13,6 +25,9 @@ const start = async () => {
 	try {
 		await connectDatabase(logger);
 		await connectChatDatabase(logger);
+		await connectSubscriptionDatabase(logger);
+		await connectProductionDatabase(logger);
+		await connectPostgresDatabase(logger);
 
 		await app.listen({ port: config.PORT, host: "0.0.0.0" });
 
@@ -22,6 +37,9 @@ const start = async () => {
 		const shutdown = async (signal: string) => {
 			logger.info(`Received ${signal}, shutting down...`);
 			await app.close();
+			await disconnectPostgresDatabase(logger);
+			await disconnectProductionDatabase(logger);
+			await disconnectSubscriptionDatabase(logger);
 			await disconnectChatDatabase(logger);
 			await disconnectDatabase(logger);
 			process.exit(0);

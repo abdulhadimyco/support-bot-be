@@ -5,11 +5,13 @@ import {
 	listThreads,
 	createThread,
 	getThread,
+	updateThread,
 	closeThread,
 } from "./thread.controller";
 import {
 	listThreadsQuerySchema,
 	createThreadBodySchema,
+	updateThreadBodySchema,
 	threadParamsSchema,
 } from "./thread.schema";
 
@@ -33,6 +35,12 @@ export default async function threadRoutes(app: FastifyInstance) {
 		"/:id",
 		{ schema: { params: threadParamsSchema } },
 		getThread,
+	);
+
+	app.patch(
+		"/:id",
+		{ schema: { params: threadParamsSchema, body: updateThreadBodySchema } },
+		updateThread,
 	);
 
 	app.delete(

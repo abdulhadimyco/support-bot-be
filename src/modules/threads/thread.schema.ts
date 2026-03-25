@@ -17,3 +17,7 @@ export const createThreadBodySchema = z.object({
 export const threadParamsSchema = z.object({
 	id: objectIdSchema,
 });
+
+export const updateThreadBodySchema = z.object({
+	title: z.string().max(200).min(1),
+});

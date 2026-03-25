@@ -17,12 +17,14 @@ import type {
 	listThreadsQuerySchema,
 	createThreadBodySchema,
 	threadParamsSchema,
+	updateThreadBodySchema,
 } from "./thread.schema";
 import type { z } from "zod";
 
 type ListQuery = z.infer<typeof listThreadsQuerySchema>;
 type CreateBody = z.infer<typeof createThreadBodySchema>;
 type ThreadParams = z.infer<typeof threadParamsSchema>;
+type UpdateBody = z.infer<typeof updateThreadBodySchema>;
 
 function serializeThread(doc: IThread & { _id: Types.ObjectId }) {
 	return {
@@ -114,6 +116,24 @@ export async function getThread(
 		...serializeThread(thread),
 		messages: messages.map(serializeMessage),
 	});
+}
+
+export async function updateThread(
+	request: FastifyRequest<{ Params: ThreadParams; Body: UpdateBody }>,
+	_reply: FastifyReply,
+) {
+	const { id } = request.params;
+	const { title } = request.body;
+	const Thread = getThreadModel();
+
+	const thread = await Thread.findById(id);
+	if (!thread) throw new NotFoundError("Thread not found");
+	assertThreadOwnership(thread, request.appUser!);
+
+	thread.title = title;
+	await thread.save();
+
+	return successResponse(serializeThread(thread.toObject()));
 }
 
 export async function closeThread(

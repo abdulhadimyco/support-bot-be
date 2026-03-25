@@ -4,7 +4,6 @@ import { getModel } from "../../ai/providers";
 import { getThreadModel, getMessageModel } from "../../db/models";
 import {
 	BadRequestError,
-	ForbiddenError,
 	NotFoundError,
 } from "../../lib/errors";
 import { assertThreadOwnership } from "../../utils/thread.utils";
@@ -58,7 +57,6 @@ export async function handleChat(
 		thread = await Thread.create({ userId: appUser._id, title });
 	}
 
-	// Save the latest user message to the database
 	const lastMessage = messages[messages.length - 1];
 	const lastUserText =
 		lastMessage?.role === "user" ? extractText(lastMessage) : null;
@@ -71,7 +69,6 @@ export async function handleChat(
 		});
 	}
 
-	// Stream AI response and handle assistant message persistence
 	const startTime = Date.now();
 	const model = getModel("primary");
 	const threadIdStr = String(thread._id);
@@ -79,9 +76,10 @@ export async function handleChat(
 	const result = streamText({
 		model,
 		messages: toModelMessages(messages),
-		onFinish: async ({ text, usage }) => {
+		onFinish: async ({ text, usage, totalUsage }) => {
 			try {
 				const elapsedMs = Date.now() - startTime;
+				const tokens = totalUsage ?? usage;
 
 				await Message.create({
 					threadId: thread._id,
@@ -90,8 +88,8 @@ export async function handleChat(
 					metadata: {
 						model: config.MINIMAX_MODEL,
 						provider: "minimax",
-						inputTokens: usage?.inputTokens ?? null,
-						outputTokens: usage?.outputTokens ?? null,
+						inputTokens: tokens?.inputTokens ?? null,
+						outputTokens: tokens?.outputTokens ?? null,
 						elapsedMs,
 					},
 				});

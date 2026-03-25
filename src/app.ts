@@ -14,6 +14,7 @@ import cachePlugin from "./plugins/cache.plugin";
 import observabilityPlugin from "./plugins/observability.plugin";
 import { errorHandler } from "./middlewares/error-handler";
 import { checkDatabaseHealth } from "./lib/database";
+import { checkChatDatabaseHealth } from "./lib/chat-database";
 import registerModules from "./modules";
 
 export const buildApp = async () => {
@@ -60,15 +61,17 @@ export const buildApp = async () => {
 	// Health check
 	fastify.get("/health", { schema: { hide: true } }, async () => {
 		const dbHealthy = await checkDatabaseHealth();
+		const chatDbHealthy = await checkChatDatabaseHealth();
 		return {
 			success: true,
 			statusCode: 200,
 			data: {
-				status: dbHealthy ? "healthy" : "degraded",
+				status: dbHealthy && chatDbHealthy ? "healthy" : "degraded",
 				service: config.APP_NAME,
 				version: config.APP_VERSION,
 				uptime: process.uptime(),
 				database: dbHealthy ? "connected" : "disconnected",
+				chatDatabase: chatDbHealthy ? "connected" : "disconnected",
 			},
 		};
 	});

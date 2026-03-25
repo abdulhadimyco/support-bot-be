@@ -13,6 +13,7 @@ export default fp(
 			await fastify.register(cors, {
 				origin: config.CORS_ORIGIN,
 				credentials: true,
+				exposedHeaders: ["X-Thread-Id"],
 			});
 		}
 

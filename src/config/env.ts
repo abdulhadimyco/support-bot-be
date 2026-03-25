@@ -13,18 +13,24 @@ const configSchema = z.object({
 		.enum(["production", "development", "test"])
 		.default("development"),
 
-	PORT: z.string().regex(/^\d+$/).transform(Number).default("3000"),
+	PORT: z.string().regex(/^\d+$/).transform(Number).default("8086"),
 
-	// Database
+	// Database (template default — used for business data in later phases)
 	MONGO_DATABASE_URL: z.string(),
 	REDIS_URL: z.string().optional(),
+
+	// Chat Database (separate connection for threads/messages/agents)
+	MONGO_CHAT_URI: z.string().min(1),
+	MONGO_CHAT_DB: z.string().default("myco_support"),
 
 	// Auth (JWT validation only — no signing)
 	JWT_SECRET: z.string().min(1),
 
-	// Kafka
-	KAFKA_BROKER: z.string().default("localhost:9092"),
-	KAFKA_CLIENT_ID: z.string().default("app-service"),
+	// AI Providers
+	MINIMAX_API_KEY: z.string().min(1),
+	ANTHROPIC_API_KEY: z.string().min(1),
+	MINIMAX_MODEL: z.string().default("MiniMax-M2.7"),
+	ANTHROPIC_MODEL: z.string().default("claude-sonnet-4-20250514"),
 
 	// Observability
 	LOG_LEVEL: z

@@ -13,6 +13,7 @@ declare module "fastify" {
 export default fp(
 	async (fastify: FastifyInstance) => {
 		fastify.decorateRequest("user", null);
+		fastify.decorateRequest("appUser", null);
 
 		fastify.addHook("onRequest", async (request: FastifyRequest) => {
 			const token = extractToken(request);

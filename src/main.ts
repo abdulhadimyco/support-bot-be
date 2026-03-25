@@ -1,6 +1,9 @@
 import config from "./config/env";
 import { connectDatabase, disconnectDatabase } from "./lib/database";
-import { connectKafka, disconnectKafka } from "./lib/kafka";
+import {
+	connectChatDatabase,
+	disconnectChatDatabase,
+} from "./lib/chat-database";
 import { buildApp } from "./app";
 
 const start = async () => {
@@ -9,7 +12,7 @@ const start = async () => {
 
 	try {
 		await connectDatabase(logger);
-		await connectKafka(logger);
+		await connectChatDatabase(logger);
 
 		await app.listen({ port: config.PORT, host: "0.0.0.0" });
 
@@ -19,7 +22,7 @@ const start = async () => {
 		const shutdown = async (signal: string) => {
 			logger.info(`Received ${signal}, shutting down...`);
 			await app.close();
-			await disconnectKafka(logger);
+			await disconnectChatDatabase(logger);
 			await disconnectDatabase(logger);
 			process.exit(0);
 		};

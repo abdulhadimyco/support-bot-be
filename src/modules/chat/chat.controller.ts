@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { getModel } from "../../ai/providers";
 import { getThreadModel, getMessageModel } from "../../db/models";
 import {
@@ -7,6 +7,9 @@ import {
 	NotFoundError,
 } from "../../lib/errors";
 import { assertThreadOwnership } from "../../utils/thread.utils";
+import { allTools } from "../../ai/tools";
+import { getSystemPrompt } from "../../ai/system-prompt";
+import { autoPrefetch } from "../../ai/prefetch";
 import config from "../../config/env";
 import type { z } from "zod";
 import type { chatBodySchema } from "./chat.schema";
@@ -73,9 +76,29 @@ export async function handleChat(
 	const model = getModel("primary");
 	const threadIdStr = String(thread._id);
 
+	let prefetchContext: string | null = null;
+	if (lastUserText) {
+		try {
+			const prefetch = await autoPrefetch(lastUserText);
+			prefetchContext = prefetch.context;
+		} catch (err) {
+			request.log.error({ err }, "Auto-prefetch failed");
+		}
+	}
+
+	const modelMessages = toModelMessages(messages);
+
+	const basePrompt = getSystemPrompt(appUser.name || appUser.username || "Support");
+	const systemPrompt = prefetchContext
+		? `${basePrompt}\n\n--- PRE-FETCHED CUSTOMER DATA ---\n${prefetchContext}`
+		: basePrompt;
+
 	const result = streamText({
 		model,
-		messages: toModelMessages(messages),
+		system: systemPrompt,
+		messages: modelMessages,
+		tools: allTools as any,
+		stopWhen: stepCountIs(8),
 		onFinish: async ({ text }) => {
 			try {
 				const elapsedMs = Date.now() - startTime;

@@ -62,10 +62,12 @@ export const buildApp = async () => {
 
 	// Health check
 	fastify.get("/health", { schema: { hide: true } }, async () => {
-		const chatDbHealthy = await checkChatDatabaseHealth();
-		const subscriptionDbHealthy = await checkSubscriptionDatabaseHealth();
-		const productionDbHealthy = await checkProductionDatabaseHealth();
-		const pgDbHealthy = await checkPostgresDatabaseHealth();
+		const [chatDbHealthy, subscriptionDbHealthy, productionDbHealthy, pgDbHealthy] = await Promise.all([
+			checkChatDatabaseHealth(),
+			checkSubscriptionDatabaseHealth(),
+			checkProductionDatabaseHealth(),
+			checkPostgresDatabaseHealth(),
+		]);
 		return {
 			success: true,
 			statusCode: 200,

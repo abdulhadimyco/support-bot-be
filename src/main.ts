@@ -22,10 +22,12 @@ const start = async () => {
 	const logger = app.log;
 
 	try {
-		await connectChatDatabase(logger);
-		await connectSubscriptionDatabase(logger);
-		await connectProductionDatabase(logger);
-		await connectPostgresDatabase(logger);
+		await Promise.all([
+			connectChatDatabase(logger),
+			connectSubscriptionDatabase(logger),
+			connectProductionDatabase(logger),
+			connectPostgresDatabase(logger),
+		]);
 
 		await app.listen({ port: config.PORT, host: "0.0.0.0" });
 

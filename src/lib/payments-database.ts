@@ -38,9 +38,14 @@ export const connectPostgresDatabase = async (
 
 		const client = await pool.connect();
 		client.release();
-		logger.info("PostgreSQL payments database connected");
+		logger.info(
+			`PostgreSQL payments database connected (${config.POSTGRES_HOST}:${config.POSTGRES_PORT}/${config.POSTGRES_DB})`,
+		);
 	} catch (err) {
-		logger.error({ err }, "PostgreSQL connection failed");
+		logger.error(
+			{ err, host: config.POSTGRES_HOST, port: config.POSTGRES_PORT, database: config.POSTGRES_DB },
+			"PostgreSQL connection failed",
+		);
 		pool = null;
 	}
 };

@@ -31,7 +31,7 @@ export const connectSubscriptionDatabase = async (
 			subscriptionConnection = mongoose.createConnection(
 				config.MONGO_SUBSCRIPTION_URI,
 				{
-					dbName: config.MONGO_SUBSCRIPTION_DB,
+					dbName: "subscription",
 				},
 			);
 			await subscriptionConnection.asPromise();

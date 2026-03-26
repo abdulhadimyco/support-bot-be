@@ -1,5 +1,6 @@
 import mongoose, { type Connection } from "mongoose";
 import config from "../config/env";
+import { USER_DB } from "../constants/databases";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -36,7 +37,7 @@ export const connectProductionDatabase = async (
 			productionConnection = mongoose.createConnection(
 				config.MONGO_PRODUCTION_URI!,
 				{
-					dbName: config.MONGO_PRODUCTION_DB,
+					dbName: USER_DB,
 				},
 			);
 			await productionConnection.asPromise();
@@ -93,14 +94,6 @@ export const getProductionClusterDb = (dbName: string) => {
 	dbCache.set(dbName, db);
 	return db;
 };
-export const getProductionDb = () => {
-	return getProductionClusterDb(config.MONGO_PRODUCTION_DB);
-};
-
-export const getEngagementDb = () => {
-	return getProductionClusterDb(config.MONGO_ENGAGEMENT_DB);
-};
-
 export const checkProductionDatabaseHealth = async (): Promise<boolean> => {
 	try {
 		if (!productionConnection || productionConnection.readyState !== 1)

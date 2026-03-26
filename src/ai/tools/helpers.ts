@@ -22,10 +22,6 @@ export function toHexString(v: unknown): string | null {
 	return String(v);
 }
 
-export function formatShort(d: Date): string {
-	return dayjs(d).format("YYYY-MM-DD HH:mm");
-}
-
 export function normalizePhoneVariants(raw: string): string[] {
 	const input = String(raw || "").trim();
 	if (!input) return [];
@@ -106,10 +102,4 @@ export function adfToPlainText(node: unknown, out: string[]): void {
 	if (Array.isArray(n.content)) {
 		for (const child of n.content) adfToPlainText(child, out);
 	}
-}
-
-export interface DatabaseLogger {
-	info: (msg: string) => void;
-	warn: (msg: string) => void;
-	error: (obj: object, msg: string) => void;
 }

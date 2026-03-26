@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import config from "../../config/env";
 import { jiraConfigured, adfToPlainText } from "./helpers";
 
@@ -15,7 +14,7 @@ function parseIssueKey(urlOrKey: string): string | null {
 
 async function execute(
 	params: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
 	if (!jiraConfigured()) return { error: "Jira not configured." };
 

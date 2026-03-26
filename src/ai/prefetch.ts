@@ -1,4 +1,3 @@
-import type { ToolExecutionOptions } from "ai";
 import { getUserByEmail } from "./tools/get-user-by-email";
 import { getUserByPhone } from "./tools/get-user-by-phone";
 import { mongoQuery } from "./tools/mongo-query";
@@ -11,11 +10,6 @@ import {
 const EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
 const PHONE_RE = /\+?\d[\d\s\-]{8,15}\d/;
 const PREFETCH_TIMEOUT_MS = 3000;
-
-const stubOpts: ToolExecutionOptions = {
-	toolCallId: "prefetch",
-	messages: [],
-};
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 	return Promise.race([
@@ -34,8 +28,8 @@ export async function autoPrefetch(userText: string): Promise<{
 	if (!emailMatch && !phoneMatch) return { context: null, userId: null };
 
 	const lookupPromise: Promise<Record<string, unknown>> = emailMatch
-		? getUserByEmail.execute({ email: emailMatch[0] }, stubOpts) as Promise<Record<string, unknown>>
-		: getUserByPhone.execute({ phone: phoneMatch![0] }, stubOpts) as Promise<Record<string, unknown>>;
+		? (getUserByEmail.execute({ email: emailMatch[0] }) as Promise<Record<string, unknown>>)
+		: (getUserByPhone.execute({ phone: phoneMatch![0] }) as Promise<Record<string, unknown>>);
 
 	const userResult = await withTimeout(lookupPromise, PREFETCH_TIMEOUT_MS);
 
@@ -48,26 +42,20 @@ export async function autoPrefetch(userText: string): Promise<{
 	parts.push(`Customer: ${JSON.stringify(userResult)}`);
 
 	const [subResult, payResult] = await Promise.allSettled([
-		mongoQuery.execute(
-			{
-				database: SUBSCRIPTION_DB,
-				collection: SC.SUBSCRIPTIONS,
-				filter: { userId },
-				sort: { createdAt: -1 },
-				limit: 10,
-			},
-			stubOpts,
-		),
-		mongoQuery.execute(
-			{
-				database: SUBSCRIPTION_DB,
-				collection: SC.CHECKOUT_SESSIONS,
-				filter: { userId },
-				sort: { createdAt: -1 },
-				limit: 10,
-			},
-			stubOpts,
-		),
+		mongoQuery.execute({
+			database: SUBSCRIPTION_DB,
+			collection: SC.SUBSCRIPTIONS,
+			filter: { userId },
+			sort: { createdAt: -1 },
+			limit: 10,
+		}),
+		mongoQuery.execute({
+			database: SUBSCRIPTION_DB,
+			collection: SC.CHECKOUT_SESSIONS,
+			filter: { userId },
+			sort: { createdAt: -1 },
+			limit: 10,
+		}),
 	]);
 
 	if (subResult.status === "fulfilled") {
@@ -77,7 +65,10 @@ export async function autoPrefetch(userText: string): Promise<{
 		parts.push(`Recent checkouts: ${JSON.stringify(payResult.value)}`);
 	}
 
-	toolLogger.info({ userId, email: emailMatch?.[0], phone: phoneMatch?.[0] }, "Prefetch complete");
+	toolLogger.info(
+		{ userId, email: emailMatch?.[0], phone: phoneMatch?.[0] },
+		"Prefetch complete",
+	);
 
 	return { context: parts.join("\n\n"), userId };
 }

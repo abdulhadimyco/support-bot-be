@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { getSubscriptionConnection } from "../../lib/subscription-database";
 import { getProductionClusterDb } from "../../lib/production-database";
 import { USER_DB, USER_COLLECTIONS, SUBSCRIPTION_COLLECTIONS as SC } from "../../constants/databases";
@@ -17,7 +16,7 @@ const parameters = z.object({
 
 async function execute(
 	{ phone: rawPhone }: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
 	const phone = rawPhone.trim();
 	if (!phone) return { error: "Provide a phone number.", code: ToolErrorCode.INVALID_INPUT };

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { getUserByEmail } from "./get-user-by-email";
 import { getUserByPhone } from "./get-user-by-phone";
 
@@ -8,12 +7,9 @@ const parameters = z.object({
 	phone: z.string().optional().describe("Customer phone number"),
 });
 
-async function execute(
-	params: z.infer<typeof parameters>,
-	opts: ToolExecutionOptions,
-) {
-	if (params.email) return getUserByEmail.execute({ email: params.email }, opts);
-	if (params.phone) return getUserByPhone.execute({ phone: params.phone }, opts);
+async function execute(params: z.infer<typeof parameters>) {
+	if (params.email) return getUserByEmail.execute({ email: params.email });
+	if (params.phone) return getUserByPhone.execute({ phone: params.phone });
 	return { error: "Provide email or phone." };
 }
 

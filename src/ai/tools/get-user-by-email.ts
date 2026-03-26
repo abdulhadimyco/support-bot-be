@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { Types } from "mongoose";
 import { getSubscriptionConnection } from "../../lib/subscription-database";
 import { SUBSCRIPTION_COLLECTIONS as SC } from "../../constants/databases";
@@ -17,7 +16,7 @@ const parameters = z.object({
 
 async function execute(
 	{ email: rawEmail }: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
 	const email = rawEmail.trim();
 	if (!email) return { error: "Provide an email address.", code: ToolErrorCode.INVALID_INPUT };

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { round, groupBy, sumBy, mapValues } from "lodash";
 import { Types } from "mongoose";
 import { escapeRegExp } from "lodash";
@@ -95,11 +94,10 @@ async function fetchPgTransactions(userId: string, email: string | null) {
 
 async function execute(
 	params: z.infer<typeof parameters>,
-	opts: ToolExecutionOptions,
 ) {
 	const conn = getSubscriptionConnection();
 	const db = conn?.db;
-	if (!db) return toolError(ToolErrorCode.DB_UNAVAILABLE, "Subscription database not connected.");
+	if (!db) return toolError(ToolErrorCode.DB_UNAVAILABLE, "Subscription database not connected.", "getPaymentHistory");
 
 	let userId: string;
 	let email: string | null = null;
@@ -114,13 +112,13 @@ async function execute(
 		email = (latest?.email as string) || null;
 		name = (latest?.name as string) || null;
 	} else if (params.email) {
-		const resolved = await getUserByEmail.execute({ email: params.email }, opts);
+		const resolved = await getUserByEmail.execute({ email: params.email });
 		if ("error" in resolved) return resolved;
 		userId = String((resolved as Record<string, unknown>).user_id);
 		email = (resolved as Record<string, unknown>).email as string || params.email;
 		name = (resolved as Record<string, unknown>).name as string || null;
 	} else {
-		return toolError(ToolErrorCode.INVALID_INPUT, "Provide user_id or email.");
+		return toolError(ToolErrorCode.INVALID_INPUT, "Provide user_id or email.", "getPaymentHistory");
 	}
 
 	const emailRegex = email ? { $regex: new RegExp("^" + escapeRegExp(email) + "$", "i") } : null;
@@ -140,7 +138,7 @@ async function execute(
 	const receipts = await db.collection(SC.RECEIPTS).find({ $or: receiptOr }).sort({ createdAt: -1 }).limit(500).toArray();
 
 	if (!receipts.length && !subscriptions.length) {
-		return toolError(ToolErrorCode.NOT_FOUND, "No payment history found for this user.");
+		return toolError(ToolErrorCode.NOT_FOUND, "No payment history found for this user.", "getPaymentHistory");
 	}
 
 	const allLicenseIds = [...receipts, ...checkouts, ...subscriptions]

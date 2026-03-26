@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { resolveCollection, describeAllowlist } from "./helpers";
 import { ToolErrorCode, toolError, toolLogger } from "./errors";
 
@@ -66,16 +65,16 @@ async function execute(
 		sort,
 		limit,
 	}: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
 	const col = resolveCollection(database, collection);
 	if (!col) {
-		return toolError(ToolErrorCode.ACCESS_DENIED, `${database}.${collection} is not allowed.\n\nAllowed:\n${describeAllowlist()}`);
+		return toolError(ToolErrorCode.ACCESS_DENIED, `${database}.${collection} is not allowed.\n\nAllowed:\n${describeAllowlist()}`, "mongoQuery", { database, collection });
 	}
 
 	const blocked = containsBlockedOperator(filter);
 	if (blocked) {
-		return toolError(ToolErrorCode.BLOCKED, `Operator ${blocked} is not allowed.`);
+		return toolError(ToolErrorCode.BLOCKED, `Operator ${blocked} is not allowed.`, "mongoQuery", { database, collection });
 	}
 
 	try {
@@ -88,7 +87,7 @@ async function execute(
 		return { database, collection, count: docs.length, documents: docs };
 	} catch (e) {
 		toolLogger.error({ err: e, database, collection }, "mongoQuery failed");
-		return toolError(ToolErrorCode.QUERY_FAILED, (e as Error).message);
+		return toolError(ToolErrorCode.QUERY_FAILED, (e as Error).message, "mongoQuery", { database, collection });
 	}
 }
 

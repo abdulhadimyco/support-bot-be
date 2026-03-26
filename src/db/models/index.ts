@@ -5,3 +5,4 @@ export {
 	type IMessage,
 	type IMessageMetadata,
 } from "./message.model";
+export { getToolErrorModel, type IToolError } from "./tool-error.model";

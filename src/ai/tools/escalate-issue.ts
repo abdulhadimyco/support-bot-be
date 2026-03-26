@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import crypto from "crypto";
 
 const parameters = z.object({
@@ -9,7 +8,7 @@ const parameters = z.object({
 
 async function execute(
 	{ summary, priority }: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
 	const ticketId = "ESC-" + crypto.randomBytes(3).toString("hex").toUpperCase();
 	return {

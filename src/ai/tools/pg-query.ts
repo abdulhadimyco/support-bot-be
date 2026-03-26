@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecutionOptions } from "ai";
 import { pgQuery, postgresEnabled } from "../../lib/payments-database";
 import { PG_TABLE_ALLOWLIST } from "../../constants/databases";
 import { ToolErrorCode, toolError, toolLogger } from "./errors";
@@ -25,22 +24,24 @@ const parameters = z.object({
 
 async function execute(
 	{ sql, params }: z.infer<typeof parameters>,
-	_opts: ToolExecutionOptions,
+
 ) {
+	const sqlPreview = sql.slice(0, 200);
+
 	if (!postgresEnabled()) {
-		return toolError(ToolErrorCode.DB_UNAVAILABLE, "Payments PostgreSQL database not connected.");
+		return toolError(ToolErrorCode.DB_UNAVAILABLE, "Payments PostgreSQL database not connected.", "pgQuery");
 	}
 
 	if (sql.includes(";")) {
-		return toolError(ToolErrorCode.BLOCKED, "Multiple statements not allowed. Send a single SELECT query.");
+		return toolError(ToolErrorCode.BLOCKED, "Multiple statements not allowed.", "pgQuery", { sql: sqlPreview });
 	}
 
 	if (WRITE_PATTERNS.test(sql)) {
-		return toolError(ToolErrorCode.BLOCKED, "Write operations not allowed. SELECT only.");
+		return toolError(ToolErrorCode.BLOCKED, "Write operations not allowed. SELECT only.", "pgQuery", { sql: sqlPreview });
 	}
 
 	if (DANGEROUS_FUNCTIONS.test(sql)) {
-		return toolError(ToolErrorCode.BLOCKED, "This function is not allowed.");
+		return toolError(ToolErrorCode.BLOCKED, "This function is not allowed.", "pgQuery", { sql: sqlPreview });
 	}
 
 	const tablePattern = /\b(?:FROM|JOIN)\s+["']?(\w+)["']?/gi;
@@ -52,21 +53,21 @@ async function execute(
 
 	for (const table of tables) {
 		if (!(PG_TABLE_ALLOWLIST as Set<string>).has(table)) {
-			return toolError(ToolErrorCode.ACCESS_DENIED, `Table "${table}" not allowed. Allowed: ${[...PG_TABLE_ALLOWLIST].join(", ")}`);
+			return toolError(ToolErrorCode.ACCESS_DENIED, `Table "${table}" not allowed. Allowed: ${[...PG_TABLE_ALLOWLIST].join(", ")}`, "pgQuery", { sql: sqlPreview });
 		}
 	}
 
 	if (!/\bLIMIT\b/i.test(sql)) {
-		return toolError(ToolErrorCode.INVALID_INPUT, "Query must include a LIMIT clause (max 200).");
+		return toolError(ToolErrorCode.INVALID_INPUT, "Query must include a LIMIT clause (max 200).", "pgQuery", { sql: sqlPreview });
 	}
 
 	try {
 		const result = await pgQuery(sql, params || []);
-		if (!result) return toolError(ToolErrorCode.QUERY_FAILED, "Query returned no result.");
+		if (!result) return toolError(ToolErrorCode.QUERY_FAILED, "Query returned no result.", "pgQuery", { sql: sqlPreview });
 		return { row_count: result.rowCount, rows: result.rows };
 	} catch (e) {
-		toolLogger.error({ err: e, sql: sql.slice(0, 200) }, "pgQuery failed");
-		return toolError(ToolErrorCode.QUERY_FAILED, (e as Error).message);
+		toolLogger.error({ err: e, sql: sqlPreview }, "pgQuery failed");
+		return toolError(ToolErrorCode.QUERY_FAILED, (e as Error).message, "pgQuery", { sql: sqlPreview });
 	}
 }
 

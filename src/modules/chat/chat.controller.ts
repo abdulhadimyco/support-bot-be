@@ -76,6 +76,8 @@ export async function handleChat(
 	const model = getModel("primary");
 	const threadIdStr = String(thread._id);
 
+
+
 	let prefetchContext: string | null = null;
 	if (lastUserText) {
 		try {

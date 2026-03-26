@@ -1,12 +1,6 @@
 import dayjs from "dayjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { Types } from "mongoose";
-import { getSubscriptionConnection } from "../../lib/subscription-database";
-import { getProductionClusterDb } from "../../lib/production-database";
-import {
-	SUBSCRIPTION_CLUSTER_ALLOWLIST,
-	PRODUCTION_CLUSTER_ALLOWLIST,
-} from "../../constants/databases";
 import config from "../../config/env";
 
 export function toIso(v: unknown): string | null {
@@ -46,40 +40,6 @@ export const USER_PROJECTION = {
 	subcodes: 0,
 	availableCountries: 0,
 };
-
-export function resolveCollection(
-	database: string,
-	collection: string,
-) {
-	if (
-		(SUBSCRIPTION_CLUSTER_ALLOWLIST[database] as readonly string[])?.includes(
-			collection,
-		)
-	) {
-		const conn = getSubscriptionConnection();
-		return conn?.db?.collection(collection) ?? null;
-	}
-	if (
-		(PRODUCTION_CLUSTER_ALLOWLIST[database] as readonly string[])?.includes(
-			collection,
-		)
-	) {
-		const db = getProductionClusterDb(database);
-		return db?.collection(collection) ?? null;
-	}
-	return null;
-}
-
-export function describeAllowlist(): string {
-	const lines: string[] = [];
-	for (const [db, cols] of Object.entries(SUBSCRIPTION_CLUSTER_ALLOWLIST)) {
-		lines.push(`${db}: ${(cols as readonly string[]).join(", ")}`);
-	}
-	for (const [db, cols] of Object.entries(PRODUCTION_CLUSTER_ALLOWLIST)) {
-		lines.push(`${db}: ${(cols as readonly string[]).join(", ")}`);
-	}
-	return lines.join("\n");
-}
 
 export function jiraConfigured(): boolean {
 	return Boolean(

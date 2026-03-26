@@ -3,20 +3,16 @@ import { lookupUser } from "./lookup-user";
 import { getUserByEmail } from "./get-user-by-email";
 import { getUserByPhone } from "./get-user-by-phone";
 import { getPaymentHistory } from "./get-payment-history";
-import { mongoQuery } from "./mongo-query";
-import { mongoAggregate } from "./mongo-aggregate";
 import { pgQueryTool } from "./pg-query";
 import { getJiraTicket } from "./get-jira-ticket";
 import { listJiraTickets } from "./list-jira-tickets";
 import { escalateIssue } from "./escalate-issue";
 import { toolLogger } from "./errors";
 
-/**
- * Convert a plain tool definition { description, parameters, execute }
- * into a proper AI SDK tool with inputSchema + logging wrapper.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function register(name: string, def: { description: string; parameters: any; execute: (...args: any[]) => Promise<any> }) {
+type AnyTool = { description: string; parameters: any; execute: (...args: any[]) => Promise<any> };
+
+function register(name: string, def: AnyTool) {
 	const originalExecute = def.execute;
 
 	return tool({
@@ -55,13 +51,11 @@ function register(name: string, def: { description: string; parameters: any; exe
 	});
 }
 
-export const allTools = {
+export const specializedTools = {
 	lookupUser: register("lookupUser", lookupUser),
 	getUserByEmail: register("getUserByEmail", getUserByEmail),
 	getUserByPhone: register("getUserByPhone", getUserByPhone),
 	getPaymentHistory: register("getPaymentHistory", getPaymentHistory),
-	mongoQuery: register("mongoQuery", mongoQuery),
-	mongoAggregate: register("mongoAggregate", mongoAggregate),
 	pgQuery: register("pgQuery", pgQueryTool),
 	getJiraTicket: register("getJiraTicket", getJiraTicket),
 	listJiraTickets: register("listJiraTickets", listJiraTickets),

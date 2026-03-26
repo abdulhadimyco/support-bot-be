@@ -15,6 +15,7 @@ import {
 	connectPostgresDatabase,
 	disconnectPostgresDatabase,
 } from "./lib/payments-database";
+import { initMcpClients, closeMcpClients } from "./ai/mcp-mongo";
 import { buildApp } from "./app";
 
 const start = async () => {
@@ -28,6 +29,10 @@ const start = async () => {
 			connectProductionDatabase(logger),
 			connectPostgresDatabase(logger),
 		]);
+		logger.info("Initializing MongoDB MCP clients");
+
+		await initMcpClients();
+		logger.info("MongoDB MCP clients initialized");
 
 		await app.listen({ port: config.PORT, host: "0.0.0.0" });
 
@@ -37,6 +42,7 @@ const start = async () => {
 		const shutdown = async (signal: string) => {
 			logger.info(`Received ${signal}, shutting down...`);
 			await app.close();
+			await closeMcpClients();
 			await disconnectPostgresDatabase(logger);
 			await disconnectProductionDatabase(logger);
 			await disconnectSubscriptionDatabase(logger);

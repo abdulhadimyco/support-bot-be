@@ -7,7 +7,8 @@ import {
 	NotFoundError,
 } from "../../lib/errors";
 import { assertThreadOwnership } from "../../utils/thread.utils";
-import { allTools } from "../../ai/tools";
+import { specializedTools } from "../../ai/tools";
+import { getMcpTools } from "../../ai/mcp-mongo";
 import { getSystemPrompt } from "../../ai/system-prompt";
 import { autoPrefetch } from "../../ai/prefetch";
 import config from "../../config/env";
@@ -95,11 +96,16 @@ export async function handleChat(
 		? `${basePrompt}\n\n--- PRE-FETCHED CUSTOMER DATA ---\n${prefetchContext}`
 		: basePrompt;
 
+	const mcpTools = await getMcpTools();
+	const tools = { ...specializedTools, ...mcpTools };
+	request.log.info({ specializedCount: Object.keys(specializedTools).length, mcpCount: Object.keys(mcpTools).length, totalTools: Object.keys(tools).length }, "Tools loaded for chat");
+
 	const result = streamText({
 		model,
 		system: systemPrompt,
 		messages: modelMessages,
-		tools: allTools,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		tools: tools as any,
 		stopWhen: stepCountIs(8),
 		onFinish: async ({ text }) => {
 			try {

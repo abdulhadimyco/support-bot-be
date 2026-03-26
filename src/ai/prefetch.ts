@@ -1,11 +1,8 @@
 import { getUserByEmail } from "./tools/get-user-by-email";
 import { getUserByPhone } from "./tools/get-user-by-phone";
-import { mongoQuery } from "./tools/mongo-query";
+import { getSubscriptionConnection } from "../lib/subscription-database";
+import { SUBSCRIPTION_COLLECTIONS as SC } from "../constants/databases";
 import { toolLogger } from "./tools/errors";
-import {
-	SUBSCRIPTION_DB,
-	SUBSCRIPTION_COLLECTIONS as SC,
-} from "../constants/databases";
 
 const EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
 const PHONE_RE = /\+?\d[\d\s\-]{8,15}\d/;
@@ -41,28 +38,30 @@ export async function autoPrefetch(userText: string): Promise<{
 	const parts: string[] = [];
 	parts.push(`Customer: ${JSON.stringify(userResult)}`);
 
-	const [subResult, payResult] = await Promise.allSettled([
-		mongoQuery.execute({
-			database: SUBSCRIPTION_DB,
-			collection: SC.SUBSCRIPTIONS,
-			filter: { userId },
-			sort: { createdAt: -1 },
-			limit: 10,
-		}),
-		mongoQuery.execute({
-			database: SUBSCRIPTION_DB,
-			collection: SC.CHECKOUT_SESSIONS,
-			filter: { userId },
-			sort: { createdAt: -1 },
-			limit: 10,
-		}),
-	]);
+	// Direct DB queries for speed (MCP adds process overhead)
+	const db = getSubscriptionConnection()?.db;
+	if (db) {
+		const [subs, checkouts] = await Promise.allSettled([
+			db
+				.collection(SC.SUBSCRIPTIONS)
+				.find({ userId })
+				.sort({ createdAt: -1 })
+				.limit(10)
+				.toArray(),
+			db
+				.collection(SC.CHECKOUT_SESSIONS)
+				.find({ userId })
+				.sort({ createdAt: -1 })
+				.limit(10)
+				.toArray(),
+		]);
 
-	if (subResult.status === "fulfilled") {
-		parts.push(`Subscriptions: ${JSON.stringify(subResult.value)}`);
-	}
-	if (payResult.status === "fulfilled") {
-		parts.push(`Recent checkouts: ${JSON.stringify(payResult.value)}`);
+		if (subs.status === "fulfilled" && subs.value.length) {
+			parts.push(`Subscriptions: ${JSON.stringify(subs.value)}`);
+		}
+		if (checkouts.status === "fulfilled" && checkouts.value.length) {
+			parts.push(`Recent checkouts: ${JSON.stringify(checkouts.value)}`);
+		}
 	}
 
 	toolLogger.info(

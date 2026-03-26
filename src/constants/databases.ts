@@ -8,8 +8,6 @@ export const SUBSCRIPTION_COLLECTIONS = {
 	SUBSCRIPTIONS: "subscriptions",
 	LICENSES: "licenses",
 	RECEIPTS: "reciepts",
-	JAZZCASH_WALLETS: "jazzcashwallets",
-	METADATA: "metadata",
 } as const;
 
 // ─── Production Cluster ──────────────────────────────────────────────

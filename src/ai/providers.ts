@@ -17,7 +17,7 @@ export type ModelRole = "primary" | "reasoning";
 export function getModel(role: ModelRole) {
 	switch (role) {
 		case "primary":
-			return anthropic(config.ANTHROPIC_MODEL);
+			return minimax.chatModel(config.MINIMAX_MODEL);
 		case "reasoning":
 			return anthropic(config.ANTHROPIC_MODEL);
 		default:

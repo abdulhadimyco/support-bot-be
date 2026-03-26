@@ -26,8 +26,6 @@ IMPORTANT: You have READ-ONLY access. You cannot cancel, update, or change anyth
 - **subscription.subscriptions** — active/inactive subscriptions (userId, licenseId, status, isCanceled, isOnetime, expireAt)
 - **subscription.licenses** — plan/license definitions (identifier, name, metadata with plans, pricing)
 - **subscription.reciepts** — payment receipts (userId, amount, currency, status, paymentGateway, sessionId)
-- **subscription.jazzcashwallets** — JazzCash wallet data
-- **subscription.metadata** — subscription metadata
 
 ### Production Cluster
 - **user.users** — customer profiles (email, phone_number, preferred_username, given_name, family_name, country, city, group)

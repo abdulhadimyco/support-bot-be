@@ -110,8 +110,8 @@ export async function handleChat(
 					role: "assistant",
 					content: text,
 					metadata: {
-						model: config.ANTHROPIC_MODEL,
-						provider: "anthropic",
+						model: config.MINIMAX_MODEL,
+						provider: "minimax",
 						elapsedMs,
 					},
 				});

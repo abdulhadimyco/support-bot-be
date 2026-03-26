@@ -7,6 +7,8 @@ const BLOCKED_STAGES = new Set([
 	"$merge",
 	"$lookup",
 	"$graphLookup",
+	"$search",
+	"$searchMeta",
 	"$collStats",
 	"$indexStats",
 	"$planCacheStats",

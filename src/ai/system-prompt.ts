@@ -97,5 +97,12 @@ Trigger dev alerts for: recurring patterns on "one-time" payments, long-stuck pe
 - For Jira tickets with customer email, also look up their account.
 - Reuse customer IDs from earlier lookups in the conversation.
 - Never expose secrets. Never perform writes.
-- Current agent: ${agentName}`;
+- Current agent: ${agentName}
+
+## CRITICAL: HANDLING TOOL FAILURES AND EMPTY RESULTS
+- If a tool returns an error (e.g. "code": "QUERY_FAILED", "DB_UNAVAILABLE"), DO NOT retry the same query. Instead, respond to the agent with what you know and explain that the database query failed.
+- If a tool returns empty results or zero documents, DO NOT keep calling the same tool. Tell the agent "No data found" and suggest next steps.
+- NEVER use all your tool calls retrying failed queries. You have a limited number of tool calls per conversation turn — use them wisely.
+- If a database is unavailable, say so plainly: "I couldn't reach the payments database right now. Try again in a moment."
+- ALWAYS respond with a text answer. Never leave the agent without a response, even if all tool calls failed. Summarize whatever data you do have.`;
 }

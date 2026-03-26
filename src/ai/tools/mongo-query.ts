@@ -2,11 +2,7 @@ import { z } from "zod";
 import { resolveCollection, describeAllowlist } from "./helpers";
 import { ToolErrorCode, toolError, toolLogger } from "./errors";
 
-const BLOCKED_OPERATORS = new Set([
-	"$where",
-	"$function",
-	"$accumulator",
-]);
+const BLOCKED_OPERATORS = new Set(["$where", "$function", "$accumulator"]);
 
 function containsBlockedOperator(obj: unknown): string | null {
 	if (!obj || typeof obj !== "object") return null;
@@ -30,15 +26,13 @@ function containsBlockedOperator(obj: unknown): string | null {
 const parameters = z.object({
 	database: z
 		.string()
-		.describe(
-			"Database name (e.g. subscription, user, engagement, video, reference)",
-		),
+		.describe("Database name (e.g. subscription, user, engagement, video, reference)"),
 	collection: z.string().describe("Collection name"),
 	filter: z
 		.record(z.unknown())
 		.optional()
 		.default({})
-		.describe("MongoDB filter object"),
+		.describe('MongoDB filter as a JSON object, e.g. { "userId": "abc123" }'),
 	projection: z
 		.record(z.number())
 		.optional()
@@ -46,9 +40,10 @@ const parameters = z.object({
 	sort: z
 		.record(z.number())
 		.optional()
-		.describe("Sort object (e.g. { createdAt: -1 })"),
+		.describe('Sort object, e.g. { "createdAt": -1 }'),
 	limit: z
 		.number()
+		.int()
 		.min(1)
 		.max(100)
 		.optional()
@@ -56,25 +51,32 @@ const parameters = z.object({
 		.describe("Max documents to return (default 20, max 100)"),
 });
 
-async function execute(
-	{
-		database,
-		collection,
-		filter,
-		projection,
-		sort,
-		limit,
-	}: z.infer<typeof parameters>,
-
-) {
+async function execute({
+	database,
+	collection,
+	filter,
+	projection,
+	sort,
+	limit,
+}: z.infer<typeof parameters>) {
 	const col = resolveCollection(database, collection);
 	if (!col) {
-		return toolError(ToolErrorCode.ACCESS_DENIED, `${database}.${collection} is not allowed.\n\nAllowed:\n${describeAllowlist()}`, "mongoQuery", { database, collection });
+		return toolError(
+			ToolErrorCode.ACCESS_DENIED,
+			`${database}.${collection} is not allowed.\n\nAllowed:\n${describeAllowlist()}`,
+			"mongoQuery",
+			{ database, collection },
+		);
 	}
 
 	const blocked = containsBlockedOperator(filter);
 	if (blocked) {
-		return toolError(ToolErrorCode.BLOCKED, `Operator ${blocked} is not allowed.`, "mongoQuery", { database, collection });
+		return toolError(
+			ToolErrorCode.BLOCKED,
+			`Operator ${blocked} is not allowed.`,
+			"mongoQuery",
+			{ database, collection },
+		);
 	}
 
 	try {
@@ -87,7 +89,12 @@ async function execute(
 		return { database, collection, count: docs.length, documents: docs };
 	} catch (e) {
 		toolLogger.error({ err: e, database, collection }, "mongoQuery failed");
-		return toolError(ToolErrorCode.QUERY_FAILED, (e as Error).message, "mongoQuery", { database, collection });
+		return toolError(
+			ToolErrorCode.QUERY_FAILED,
+			(e as Error).message,
+			"mongoQuery",
+			{ database, collection },
+		);
 	}
 }
 

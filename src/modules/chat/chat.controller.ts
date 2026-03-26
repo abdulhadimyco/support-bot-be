@@ -99,7 +99,7 @@ export async function handleChat(
 		model,
 		system: systemPrompt,
 		messages: modelMessages,
-		tools: allTools as any,
+		tools: allTools,
 		stopWhen: stepCountIs(8),
 		onFinish: async ({ text }) => {
 			try {
@@ -110,8 +110,8 @@ export async function handleChat(
 					role: "assistant",
 					content: text,
 					metadata: {
-						model: config.MINIMAX_MODEL,
-						provider: "minimax",
+						model: config.ANTHROPIC_MODEL,
+						provider: "anthropic",
 						elapsedMs,
 					},
 				});

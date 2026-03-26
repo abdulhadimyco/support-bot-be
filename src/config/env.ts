@@ -15,22 +15,17 @@ const configSchema = z.object({
 
 	PORT: z.string().regex(/^\d+$/).transform(Number).default("8086"),
 
-	// Database (template default — used for business data in later phases)
-	MONGO_DATABASE_URL: z.string(),
 	REDIS_URL: z.string().optional(),
 
-	// Chat Database (separate connection for threads/messages/agents)
+	// Chat Database (threads/messages/agents)
 	MONGO_CHAT_URI: z.string().min(1),
 	MONGO_CHAT_DB: z.string().default("myco_support"),
 
-	// Subscription Cluster (subscriptions, receipts, playback, sessions — read-only)
+	// Subscription Cluster (read-only)
 	MONGO_SUBSCRIPTION_URI: z.string().optional(),
-	MONGO_SUBSCRIPTION_DB: z.string().default("myco_events"),
 
-	// Production Cluster (users, engagement/watch history — read-only)
+	// Production Cluster (read-only)
 	MONGO_PRODUCTION_URI: z.string().optional(),
-	MONGO_PRODUCTION_DB: z.string().default("mycoLive"),
-	MONGO_ENGAGEMENT_DB: z.string().default("engagement"),
 
 	// Payments Database — PostgreSQL (transactions, checkouts — read-only)
 	POSTGRES_HOST: z.string().optional(),

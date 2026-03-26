@@ -1,5 +1,4 @@
 import config from "./config/env";
-import { connectDatabase, disconnectDatabase } from "./lib/database";
 import {
 	connectChatDatabase,
 	disconnectChatDatabase,
@@ -23,7 +22,6 @@ const start = async () => {
 	const logger = app.log;
 
 	try {
-		await connectDatabase(logger);
 		await connectChatDatabase(logger);
 		await connectSubscriptionDatabase(logger);
 		await connectProductionDatabase(logger);
@@ -41,7 +39,6 @@ const start = async () => {
 			await disconnectProductionDatabase(logger);
 			await disconnectSubscriptionDatabase(logger);
 			await disconnectChatDatabase(logger);
-			await disconnectDatabase(logger);
 			process.exit(0);
 		};
 

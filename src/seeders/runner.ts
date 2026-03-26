@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { connectDatabase, disconnectDatabase } from "../lib/database";
+import { connectChatDatabase, disconnectChatDatabase } from "../lib/chat-database";
 import config from "../config/env";
 import type { FastifyBaseLogger } from "fastify";
 import type { Seeder, SeederContext } from "./types";
@@ -73,7 +73,7 @@ export const runSeeders = async (
 		throw new Error("Circular dependency detected among seeders");
 	}
 
-	await connectDatabase(logger);
+	await connectChatDatabase(logger);
 
 	try {
 		const db = mongoose.connection;
@@ -138,6 +138,6 @@ export const runSeeders = async (
 			logger.info(`✓ Completed ${seeder.name}`);
 		}
 	} finally {
-		await disconnectDatabase(logger);
+		await disconnectChatDatabase(logger);
 	}
 };

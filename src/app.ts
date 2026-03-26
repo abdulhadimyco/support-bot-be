@@ -13,7 +13,6 @@ import authPlugin from "./plugins/auth.plugin";
 import cachePlugin from "./plugins/cache.plugin";
 import observabilityPlugin from "./plugins/observability.plugin";
 import { errorHandler } from "./middlewares/error-handler";
-import { checkDatabaseHealth } from "./lib/database";
 import { checkChatDatabaseHealth } from "./lib/chat-database";
 import { checkSubscriptionDatabaseHealth } from "./lib/subscription-database";
 import { checkProductionDatabaseHealth } from "./lib/production-database";
@@ -63,7 +62,6 @@ export const buildApp = async () => {
 
 	// Health check
 	fastify.get("/health", { schema: { hide: true } }, async () => {
-		const dbHealthy = await checkDatabaseHealth();
 		const chatDbHealthy = await checkChatDatabaseHealth();
 		const subscriptionDbHealthy = await checkSubscriptionDatabaseHealth();
 		const productionDbHealthy = await checkProductionDatabaseHealth();
@@ -72,11 +70,10 @@ export const buildApp = async () => {
 			success: true,
 			statusCode: 200,
 			data: {
-				status: dbHealthy && chatDbHealthy ? "healthy" : "degraded",
+				status: chatDbHealthy ? "healthy" : "degraded",
 				service: config.APP_NAME,
 				version: config.APP_VERSION,
 				uptime: process.uptime(),
-				database: dbHealthy ? "connected" : "disconnected",
 				chatDatabase: chatDbHealthy ? "connected" : "disconnected",
 				subscriptionCluster: subscriptionDbHealthy ? "connected" : "disconnected",
 				productionCluster: productionDbHealthy ? "connected" : "disconnected",

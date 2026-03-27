@@ -46,6 +46,7 @@ function serializeMessage(doc: IMessage & { _id: Types.ObjectId }) {
 		role: doc.role,
 		content: doc.content,
 		metadata: doc.metadata ?? null,
+		toolInvocations: doc.toolInvocations ?? null,
 		createdAt: doc.createdAt.toISOString(),
 	};
 }

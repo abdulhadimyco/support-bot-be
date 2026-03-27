@@ -107,9 +107,34 @@ export async function handleChat(
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		tools: tools as any,
 		stopWhen: stepCountIs(8),
-		onFinish: async ({ text }) => {
+		onFinish: async ({ text, steps }) => {
 			try {
 				const elapsedMs = Date.now() - startTime;
+
+				const toolInvocations: Array<{
+					toolCallId: string;
+					toolName: string;
+					input?: Record<string, unknown>;
+					output?: unknown;
+				}> = [];
+
+				if (steps) {
+					for (const step of steps) {
+						if (step.toolCalls) {
+							for (const tc of step.toolCalls) {
+								const result = step.toolResults?.find(
+									(tr: any) => tr.toolCallId === tc.toolCallId,
+								);
+								toolInvocations.push({
+									toolCallId: tc.toolCallId,
+									toolName: tc.toolName,
+									input: tc.input as Record<string, unknown>,
+									output: result?.output,
+								});
+							}
+						}
+					}
+				}
 
 				await Message.create({
 					threadId: thread._id,
@@ -120,6 +145,7 @@ export async function handleChat(
 						provider: "minimax",
 						elapsedMs,
 					},
+					...(toolInvocations.length > 0 ? { toolInvocations } : {}),
 				});
 
 				if (lastUserText) {

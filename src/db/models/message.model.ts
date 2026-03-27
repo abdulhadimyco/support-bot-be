@@ -7,11 +7,19 @@ export interface IMessageMetadata {
 	elapsedMs?: number;
 }
 
+export interface IToolInvocation {
+	toolCallId: string;
+	toolName: string;
+	input?: Record<string, unknown>;
+	output?: unknown;
+}
+
 export interface IMessage {
 	threadId: Types.ObjectId;
 	role: "user" | "assistant";
 	content: string;
 	metadata: IMessageMetadata | null;
+	toolInvocations?: IToolInvocation[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -26,6 +34,7 @@ const messageSchema = new Schema<IMessage>(
 		role: { type: String, enum: ["user", "assistant"], required: true },
 		content: { type: String, required: true },
 		metadata: { type: Schema.Types.Mixed, default: null },
+		toolInvocations: { type: [Schema.Types.Mixed], default: undefined },
 	},
 	{ timestamps: true },
 );

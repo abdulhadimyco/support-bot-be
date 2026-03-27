@@ -7,6 +7,11 @@ import { pgQueryTool } from "./pg-query";
 import { getJiraTicket } from "./get-jira-ticket";
 import { listJiraTickets } from "./list-jira-tickets";
 import { escalateIssue } from "./escalate-issue";
+import { checkSubscription } from "./check-subscription";
+import { getWatchHistory } from "./get-watch-history";
+import { getWatchCalendarMonth } from "./get-watch-calendar-month";
+import { getWatchCalendarDay } from "./get-watch-calendar-day";
+import { sendDevAlert } from "./send-dev-alert";
 import { toolLogger } from "./errors";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,4 +65,9 @@ export const specializedTools = {
 	getJiraTicket: register("getJiraTicket", getJiraTicket),
 	listJiraTickets: register("listJiraTickets", listJiraTickets),
 	escalateIssue: register("escalateIssue", escalateIssue),
+	checkSubscription: register("checkSubscription", checkSubscription),
+	getWatchHistory: register("getWatchHistory", getWatchHistory),
+	getWatchCalendarMonth: register("getWatchCalendarMonth", getWatchCalendarMonth),
+	getWatchCalendarDay: register("getWatchCalendarDay", getWatchCalendarDay),
+	sendDevAlert: register("sendDevAlert", sendDevAlert),
 };

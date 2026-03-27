@@ -68,6 +68,10 @@ const configSchema = z.object({
 	RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default("100"),
 	TRUST_PROXY: booleanString.default("false"),
 
+	SENDGRID_API_KEY: z.string().optional(),
+	SENDGRID_FROM_EMAIL: z.string().email().optional().default("no-reply@myco.io"),
+	DEV_ALERT_TO_EMAIL: z.string().email().optional(),
+
 	APP_NAME: z.string().default("App Service"),
 	APP_VERSION: z.string().default("1.0.0"),
 });

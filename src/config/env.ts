@@ -19,7 +19,7 @@ const configSchema = z.object({
 
 	// Chat Database (threads/messages/agents)
 	MONGO_CHAT_URI: z.string().min(1),
-	MONGO_CHAT_DB: z.string().default("myco_support"),
+	MONGO_CHAT_DB: z.string().default("support_db"),
 
 	// Subscription Cluster (read-only)
 	MONGO_SUBSCRIPTION_URI: z.string().optional(),

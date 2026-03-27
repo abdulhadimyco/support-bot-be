@@ -18,7 +18,7 @@ export interface ToolError {
 }
 
 export const toolLogger = pino({
-	name: "c3pa-tools",
+	name: "ai-tools",
 	level: process.env.LOG_LEVEL || "info",
 	transport:
 		process.env.NODE_ENV === "development"

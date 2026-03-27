@@ -8,6 +8,7 @@ import {
 } from "../../db/models";
 import { NotFoundError } from "../../lib/errors";
 import { assertThreadOwnership } from "../../utils/thread.utils";
+import { s3Enabled, getPresignedViewUrl } from "../../lib/s3";
 import {
 	successResponse,
 	paginatedResponse,
@@ -39,7 +40,19 @@ function serializeThread(doc: IThread & { _id: Types.ObjectId }) {
 	};
 }
 
-function serializeMessage(doc: IMessage & { _id: Types.ObjectId }) {
+async function serializeMessage(doc: IMessage & { _id: Types.ObjectId }) {
+	let files = doc.files ?? null;
+	if (files && files.length > 0 && s3Enabled()) {
+		files = await Promise.all(
+			files.map(async (f) => {
+				if (f.url && !f.url.startsWith("data:") && !f.url.startsWith("http")) {
+					return { ...f, url: await getPresignedViewUrl(f.url) };
+				}
+				return f;
+			}),
+		);
+	}
+
 	return {
 		id: String(doc._id),
 		threadId: String(doc.threadId),
@@ -47,6 +60,7 @@ function serializeMessage(doc: IMessage & { _id: Types.ObjectId }) {
 		content: doc.content,
 		metadata: doc.metadata ?? null,
 		toolInvocations: doc.toolInvocations ?? null,
+		files,
 		createdAt: doc.createdAt.toISOString(),
 	};
 }
@@ -113,9 +127,11 @@ export async function getThread(
 		.sort({ createdAt: 1 })
 		.lean();
 
+	const serializedMessages = await Promise.all(messages.map(serializeMessage));
+
 	return successResponse({
 		...serializeThread(thread),
-		messages: messages.map(serializeMessage),
+		messages: serializedMessages,
 	});
 }
 

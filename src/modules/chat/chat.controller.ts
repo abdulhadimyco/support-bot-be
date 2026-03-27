@@ -17,6 +17,12 @@ import type { chatBodySchema } from "./chat.schema";
 
 type ChatBody = z.infer<typeof chatBodySchema>;
 
+interface FilePart {
+	mediaType: string;
+	url: string;
+	filename?: string;
+}
+
 function extractText(msg: ChatBody["messages"][number]): string {
 	if (msg.parts?.length) {
 		return msg.parts
@@ -27,13 +33,41 @@ function extractText(msg: ChatBody["messages"][number]): string {
 	return msg.content ?? "";
 }
 
+function extractFiles(msg: ChatBody["messages"][number]): FilePart[] {
+	if (!msg.parts?.length) return [];
+	return msg.parts
+		.filter((p) => p.type === "file")
+		.map((p) => ({
+			mediaType: (p as any).mediaType || "application/octet-stream",
+			url: (p as any).url || "",
+			filename: (p as any).filename,
+		}))
+		.filter((f) => f.url);
+}
+
 function toModelMessages(messages: ChatBody["messages"]) {
-	return messages
-		.filter((m) => m.role === "user" || m.role === "assistant")
-		.map((m) => ({
-			role: m.role as "user" | "assistant",
-			content: extractText(m),
-		}));
+	const result: Array<{ role: "user" | "assistant"; content: string | Array<{ type: "text"; text: string } | { type: "image"; image: string; mimeType?: string }> }> = [];
+
+	for (const m of messages) {
+		if (m.role !== "user" && m.role !== "assistant") continue;
+		const text = extractText(m);
+		const files = extractFiles(m);
+
+		if (m.role === "user" && files.length > 0) {
+			const parts: Array<{ type: "text"; text: string } | { type: "image"; image: string; mimeType?: string }> = [];
+			if (text) parts.push({ type: "text", text });
+			for (const f of files) {
+				if (f.mediaType.startsWith("image/")) {
+					parts.push({ type: "image", image: f.url, mimeType: f.mediaType });
+				}
+			}
+			result.push({ role: "user", content: parts.length > 0 ? parts : text });
+		} else {
+			result.push({ role: m.role as "user" | "assistant", content: text });
+		}
+	}
+
+	return result;
 }
 
 export async function handleChat(
@@ -64,12 +98,28 @@ export async function handleChat(
 	const lastMessage = messages[messages.length - 1];
 	const lastUserText =
 		lastMessage?.role === "user" ? extractText(lastMessage) : null;
+	const lastUserFiles =
+		lastMessage?.role === "user" ? extractFiles(lastMessage) : [];
 
-	if (lastUserText) {
+	if (lastUserText || lastUserFiles.length > 0) {
 		await Message.create({
 			threadId: thread._id,
 			role: "user",
-			content: lastUserText,
+			content: lastUserText || "(attached file)",
+			...(lastUserFiles.length > 0
+				? {
+						files: lastUserFiles.map((f) => {
+							let storedUrl = f.url;
+							try {
+								const parsed = new URL(f.url);
+								storedUrl = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+							} catch {
+								storedUrl = f.url;
+							}
+							return { mediaType: f.mediaType, url: storedUrl, filename: f.filename };
+						}),
+					}
+				: {}),
 		});
 	}
 
@@ -103,7 +153,8 @@ export async function handleChat(
 	const result = streamText({
 		model,
 		system: systemPrompt,
-		messages: modelMessages,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		messages: modelMessages as any,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		tools: tools as any,
 		stopWhen: stepCountIs(8),

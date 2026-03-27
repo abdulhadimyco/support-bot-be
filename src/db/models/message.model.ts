@@ -14,12 +14,19 @@ export interface IToolInvocation {
 	output?: unknown;
 }
 
+export interface IFilePart {
+	mediaType: string;
+	url: string;
+	filename?: string;
+}
+
 export interface IMessage {
 	threadId: Types.ObjectId;
 	role: "user" | "assistant";
 	content: string;
 	metadata: IMessageMetadata | null;
 	toolInvocations?: IToolInvocation[];
+	files?: IFilePart[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -35,6 +42,7 @@ const messageSchema = new Schema<IMessage>(
 		content: { type: String, required: true },
 		metadata: { type: Schema.Types.Mixed, default: null },
 		toolInvocations: { type: [Schema.Types.Mixed], default: undefined },
+		files: { type: [Schema.Types.Mixed], default: undefined },
 	},
 	{ timestamps: true },
 );

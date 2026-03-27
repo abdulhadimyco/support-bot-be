@@ -68,6 +68,14 @@ const configSchema = z.object({
 	RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default("100"),
 	TRUST_PROXY: booleanString.default("false"),
 
+	// S3-compatible storage (AWS S3 / Cloudflare R2)
+	S3_ENDPOINT: z.string().optional(), // R2: https://<account-id>.r2.cloudflarestorage.com
+	S3_BUCKET: z.string().optional(),
+	S3_REGION: z.string().optional().default("auto"),
+	S3_ACCESS_KEY_ID: z.string().optional(),
+	S3_SECRET_ACCESS_KEY: z.string().optional(),
+	S3_PUBLIC_URL: z.string().optional(), // R2 public bucket URL or custom domain
+
 	SENDGRID_API_KEY: z.string().optional(),
 	SENDGRID_FROM_EMAIL: z.string().email().optional().default("no-reply@myco.io"),
 	DEV_ALERT_TO_EMAIL: z.string().email().optional(),

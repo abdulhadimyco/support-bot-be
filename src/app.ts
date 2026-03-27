@@ -35,6 +35,7 @@ export const buildApp = async () => {
 						}
 					: undefined,
 		},
+		bodyLimit: 15 * 1024 * 1024, // 15MB for file uploads
 		trustProxy: config.TRUST_PROXY,
 		genReqId: () => crypto.randomUUID(),
 	}).withTypeProvider<ZodTypeProvider>();

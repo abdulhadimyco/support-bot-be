@@ -18,6 +18,8 @@
     "@ai-sdk/anthropic": "^3.0.64",
     "@ai-sdk/mcp": "^1.0.30",
     "@ai-sdk/openai-compatible": "^2.0.37",
+    "@aws-sdk/client-s3": "^3.1018.0",
+    "@aws-sdk/s3-request-presigner": "^3.1018.0",
     "@fastify/compress": "^8.0.1",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.2",

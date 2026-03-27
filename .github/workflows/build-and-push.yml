@@ -1,0 +1,80 @@
+name: Build & Push to Huawei SWR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    #  - 'main-*'
+      - development
+    #  - 'MWAD-*'
+
+env:
+  KUBECTL_VERSION: "1.30.0"
+  DOCKERFILE_PATH: ./Dockerfile
+  CONTEXT_PATH: .
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    outputs:
+      final_image_tag: ${{ steps.set-tag.outputs.final_image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect Environment
+        id: env
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+
+          if [[ "$BRANCH" == "main" ]]; then
+            ENV_NAME="production"
+          elif [[ "$BRANCH" == "development" ]]; then
+            ENV_NAME="staging"
+          else
+            echo "Unsupported branch: $BRANCH"
+            exit 1
+          fi
+          echo "CI_ENVIRONMENT_NAME=$ENV_NAME" >> $GITHUB_ENV
+          echo "Using environment: $ENV_NAME"
+         # echo "env_name=$ENV_NAME" >> $GITHUB_OUTPUT
+          
+
+      - name: Set Final Image Tag
+        id: set-tag
+        run: |
+          SHORT_SHA="${IMAGE_TAG::7}"
+
+          if [[ "$USE_ENV_PREFIX" == "true" ]]; then
+            FINAL_IMAGE_TAG="${CI_ENVIRONMENT_NAME}-${SHORT_SHA}"
+          else
+            FINAL_IMAGE_TAG="${SHORT_SHA}"
+          fi
+
+          echo "final_image_tag=$FINAL_IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "FINAL_IMAGE_TAG=$FINAL_IMAGE_TAG" >> $GITHUB_ENV
+          echo "Using image tag: $FINAL_IMAGE_TAG"
+
+      - name: Login to Huawei SWR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.HUAWEI_REGISTRY }}
+          username: ${{ secrets.HUAWEI_REGISTRY_USER }}
+          password: ${{ secrets.HUAWEI_REGISTRY_PASSWORD }}
+
+      - name: Build & Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.CONTEXT_PATH }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          push: true
+          provenance: false
+          secrets: |
+            "git_token=${{ secrets.PRIVATE_REPO_TOKEN }}"
+          tags: |
+            ${{ vars.HUAWEI_REGISTRY }}/${{ vars.HUAWEI_SWR_ORG }}/${{ github.event.repository.name }}:${{ steps.set-tag.outputs.final_image_tag }}
